@@ -7,6 +7,7 @@ def main(eval_data, pass_ids, model, temperature, output_path):
     pred_sqls = {}
     for question_id, example in enumerate(eval_data):
         if question_id in pass_ids:
+            success_ids.append(question_id)
             continue
         example["question_id"] = question_id
         question = example["question"]
@@ -56,7 +57,7 @@ if __name__ == '__main__':
             example = json.loads(line)
             pass_ids.append(example["question_id"])
     failed_ids = [i for i in range(len(eval_data)) if i not in pass_ids]
-    
+    print(f"Failed ids: {failed_ids}")
     while failed_ids:
         pass_ids = main(eval_data, pass_ids, model, temperature, output_path)
         print(f"Successfully processed {len(pass_ids)}/{len(eval_data)} questions")
