@@ -1,10 +1,11 @@
+
+import os
+from langchain_openai import ChatOpenAI
 from sqlagent.preprocessing.entity_retrieval import entity_retrieval
 from sqlagent.preprocessing.keyword_extraction import keyword_extraction
 from sqlagent.runner.database_manager import DatabaseManager
-from sqlagent.database_utils.db_info import get_db_all_tables, get_table_all_columns, get_db_schema
+from sqlagent.database_utils.db_info import get_db_schema
 from sqlagent.database_utils.execution import execute_sql
-import os
-from langchain_openai import ChatOpenAI
 TEMPLATES_ROOT_PATH = os.environ["TEMPLATES_ROOT_PATH"]
 
 def candidate_generation(question: str, schema_string: str, model:str="gpt-4o", temperature: float = 0.0):
@@ -29,7 +30,7 @@ def candidate_generation(question: str, schema_string: str, model:str="gpt-4o", 
     return response
 
 
-def basic_pipeline(question: str, db_mode: str, db_id: str, model:str="gpt-4o", temperature: float = 0.0):
+def preprocessing(question: str, db_mode: str, db_id: str, model:str="gpt-4o", temperature: float = 0.0):
     keywords = keyword_extraction(question=question, model=model, temperature=temperature)
     retrieval_result = entity_retrieval(question=question, keywords=keywords, db_mode=db_mode, db_id=db_id)
     print(keywords, retrieval_result)
@@ -42,6 +43,10 @@ def basic_pipeline(question: str, db_mode: str, db_id: str, model:str="gpt-4o", 
         schema_with_descriptions=None, 
         include_value_description=True
     )
+    return keywords, retrieval_result, schema_string
+
+def basic_pipeline(question: str, db_mode: str, db_id: str, model:str="gpt-4o", temperature: float = 0.0):
+    keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     response = candidate_generation(question=question, schema_string=schema_string, model=model, temperature=temperature)
     result = {
         "response": response,

@@ -1,0 +1,19 @@
+You are an advanced reasoning agent that can improve based on self refection. 
+You will be given a previous reasoning trial in which you were given access to an database schema and a question to answer. 
+
+Database Schema
+###
+{DATABASE_SCHEMA}
+
+This schema offers an in-depth description of the database's architecture, detailing tables, columns, primary keys, foreign keys, and any pertinent information regarding relationships or constraints. Special attention should be given to the examples listed beside each column, as they directly hint at which columns are relevant to our query.
+
+###
+{TRAJECTORIES}{TASK}
+
+Please respond with a JSON object structured as follows:
+
+{{
+    "is_correct": "Whether the SQL query in the lastest trial is correct or not. True or False.",
+    "reflection": "In a few sentences, diagnose a possible reason for failure and devise a new, concise, high level plan that aims to mitigate the same failure. Use complete sentences.",
+}}
+ 
