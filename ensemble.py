@@ -1,6 +1,7 @@
 from collections import defaultdict
 import argparse
 import json
+from func_timeout import func_timeout, FunctionTimedOut
 from sqlagent.utils import parse_sql
 from sqlagent.postprocessing.self_consistency import aggregate_sqls
 
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     #     f.write("")
 
     if ensemble_method == "agg":
+        meta_time_out = 30
         model_preds = defaultdict(dict)
         for model in ensemble_model:
             pred_sql_path = f"{model_pred_path}/{model}_pred_sql.json"
@@ -46,8 +48,12 @@ if __name__ == '__main__':
             DB_ID = db_id
             predictions = model_preds.get(question_id, {})
             sqls = [parse_sql(v["response"]) for v in predictions.values()]
-            final_sql = aggregate_sqls(sqls, db_mode=DB_MODE, db_id=DB_ID)
-            res = {}
+            
+            try:
+                final_sql = func_timeout(meta_time_out, aggregate_sqls, args=(sqls, DB_MODE, DB_ID))
+            except FunctionTimedOut:
+                print(f"Timeout in {question_id}: {predictions}")
+                final_sql = sqls[0]
             example["question_id"] = question_id
             example["pred"] = {
                 "response": final_sql,
