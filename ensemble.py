@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
     ensemble_model_id = "+".join([i.split('/')[-1] for i in ensemble_model])
     output_file = f"{emsemble_output_path}/{ensemble_method}_{ensemble_model_id}_pred_sql.json"
-    # with open(output_file, 'w') as f:
-    #     f.write("")
+    with open(output_file, 'w') as f:
+        f.write("")
 
     if ensemble_method == "agg":
         meta_time_out = 30
@@ -49,15 +49,23 @@ if __name__ == '__main__':
             predictions = model_preds.get(question_id, {})
             sqls = [parse_sql(v["response"]) for v in predictions.values()]
             
+            error = ""
             try:
                 final_sql = func_timeout(meta_time_out, aggregate_sqls, args=(sqls, DB_MODE, DB_ID))
             except FunctionTimedOut:
-                print(f"Timeout in {question_id}: {predictions}")
+                error = "Timeout"
+                print(f"Timeout in {question_id}")
                 final_sql = sqls[0]
+            except Exception as e:
+                error = str(e)
+                print(f"Error in {question_id}")
+                final_sql = sqls[0]
+
             example["question_id"] = question_id
             example["pred"] = {
                 "response": final_sql,
                 "ensemble_predictions": predictions,
+                "error": error
             }
             
             with open(output_file, 'a') as f:
