@@ -5,23 +5,8 @@ from sqlagent.preprocessing.entity_retrieval import entity_retrieval
 from sqlagent.database_utils.execution import execute_sql
 from sqlagent.runner.database_manager import DatabaseManager
 from sqlagent.database_utils.db_info import get_db_schema
-
+from sqlagent.utils import parse_sql
 TEMPLATES_ROOT_PATH = os.environ["TEMPLATES_ROOT_PATH"]
-
-def parse_sql(output_str):
-    sql = re.findall(r"\"SQL\": \"(.*?)\"", output_str, re.DOTALL)
-    if sql:
-        sql = sql[0]
-        if '\n' in sql:
-            sql = re.sub(r"\n", ' ', sql)
-        elif '\\n' in sql:
-            sql = re.sub(r"\\n", ' ', sql)
-        elif '\\\n' in sql:
-            sql = re.sub(r"\\\n", ' ', sql)
-        sql = re.sub(r"\s+", ' ', sql)
-    else:
-        sql = output_str
-    return sql
 
 
 def format_trajectories(trajectories: list):
