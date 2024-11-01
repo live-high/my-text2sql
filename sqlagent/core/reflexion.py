@@ -2,6 +2,7 @@ import regex as re
 import os
 from langchain_openai import ChatOpenAI
 from sqlagent.preprocessing.entity_retrieval import entity_retrieval
+from sqlagent.preprocessing.keyword_extraction import keyword_extraction
 from sqlagent.database_utils.execution import execute_sql
 from sqlagent.runner.database_manager import DatabaseManager
 from sqlagent.database_utils.db_info import get_db_schema
@@ -19,35 +20,6 @@ def format_trajectories(trajectories: list):
         formatted_trajectories += "\n"
     formatted_trajectories += "\n(END PREVIOUS TRIALS)\n\n"
     return formatted_trajectories
-
-
-def keyword_extraction_with_trajectories(question: str, trajectories: list, model: str = "gpt-4o", temperature: float = 0.0):
-    """
-    Extracts keywords from the question.
-    """
-    template_name = "keyword_extraction_with_trajectories"
-    file_name = f"template_{template_name}.txt"
-    template_path = os.path.join(TEMPLATES_ROOT_PATH, file_name)
-    KEYWORD_EXTRACTION_PROMPT = ""
-    with open(template_path, "r") as file:
-        KEYWORD_EXTRACTION_PROMPT = file.read()
-
-    task = (
-        f"Question: {question}"
-        # f"Hint: {hint}"
-    )
-    
-    prompt = KEYWORD_EXTRACTION_PROMPT.format(TASK=task, TRAJECTORIES=format_trajectories(trajectories))
-    llm = ChatOpenAI(model=model, temperature=temperature)
-    response = llm.invoke(prompt)
-    response = response.content
-    
-    try:
-        keywords = eval(response)
-    except:
-        print(f"Failed to extract keywords: {response}")
-        keywords = []
-    return keywords
 
 
 def candidate_generation_with_trajectories(question: str, schema_string: str, trajectories: list, model:str="gpt-4o", temperature: float = 0.0):
@@ -110,11 +82,12 @@ def reflexion_pipeline(
     for i in range(num_reflection):
         print(f"Round {i}")
         try:
-            keywords += keyword_extraction_with_trajectories(question=question, trajectories=trajectories, model=model, temperature=temperature)
+            task = format_trajectories(trajectories) + f"Question: {question}"
+            keywords += keyword_extraction(task=task, model=model, temperature=temperature)
             keywords = sorted(set(keywords))
             print(f"Keywords: {keywords}")
         except Exception as e:
-            print(f"Error in keyword_extraction_with_trajectories: {e}")
+            print(f"Error in keyword_extraction: {e}")
             
         retrieval_result_i = entity_retrieval(question=question, keywords=keywords, db_mode=db_mode, db_id=db_id)
         for table, column_values in retrieval_result_i['similar_values'].items():

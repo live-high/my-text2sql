@@ -28,30 +28,43 @@ if __name__ == '__main__':
 
     eval_data = json.load(open(eval_path, 'r'))
 
-    ensemble_model_id = "+".join([i.replace("/", "_") for i in ensemble_model])
-    output_file = f"{emsemble_output_path}/{ensemble_method}_{ensemble_model_id}_pred_sql.json"
-    with open(output_file, 'w') as f:
-        f.write("")
     
     model_preds = defaultdict(dict)
     for model in ensemble_model:
         pred_sql_path = f"{model_pred_path}/{model}_pred_sql.json"
         with open(pred_sql_path, 'r') as f:
             for line in f:
+                if line == '\n':
+                    continue
                 example = json.loads(line)
                 prediction = example["pred"]
                 db_id = example["db_id"]
                 question_id = example["question_id"]
                 model_preds[question_id][model] = prediction
 
+        
     if ensemble_method == "agg":
+
+        ensemble_model_id = "+".join([i.replace("/", "_") for i in ensemble_model])
+        output_file = f"{emsemble_output_path}/{ensemble_method}_{ensemble_model_id}_pred_sql.json"
+        with open(output_file, 'w') as f:
+            f.write("")
         meta_time_out = 30
+
+        count_steps = defaultdict(int)
 
         for question_id, example in enumerate(eval_data):
             db_id = example["db_id"]
             db_mode = "dev"
             predictions = model_preds.get(question_id, {})
-            sqls = [parse_sql(v["response"]) for v in predictions.values()]
+            sqls = []
+            for model, pred in predictions.items():
+                sqls.append(parse_sql(pred["response"]))
+                if "steps" in pred:
+                    steps = pred["steps"]
+                    count_steps[question_id] += len(steps)
+                    for step in steps:
+                        sqls.append(parse_sql(step["response"]))
             
             error = ""
             try:
@@ -63,7 +76,7 @@ if __name__ == '__main__':
                 final_sql = sqls[0]
             except Exception as e:
                 error = str(e)
-                print(f"Error in {question_id}")
+                print(f"Error in {question_id}: {error}")
                 final_sql = sqls[0]
 
             example["question_id"] = question_id
@@ -76,11 +89,20 @@ if __name__ == '__main__':
             with open(output_file, 'a') as f:
                 f.write(json.dumps(example) + "\n")
         print(f"Ensemble results have been saved to {output_file}")
-            
+
+        qids = [k for k, v in count_steps.items() if v > 1]
+        qcounts = [count_steps[k] for k in qids]
+        print(f"{len(qcounts)} count_steps > 1: {qcounts}")
     elif ensemble_method == "selector":
-        meta_time_out = 30
         selector_model = "claude-3-5-sonnet-20241022"
         selector_temperature = 1.0
+
+        ensemble_model_id = "+".join([i.replace("/", "_") for i in ensemble_model])
+        output_file = f"{emsemble_output_path}/{ensemble_method}_{selector_model}/{ensemble_method}_{ensemble_model_id}_pred_sql.json"
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        with open(output_file, 'w') as f:
+            f.write("")
+        meta_time_out = 30
         for question_id, example in enumerate(eval_data):
             db_id = example["db_id"]
             question = example["question"]
@@ -90,10 +112,11 @@ if __name__ == '__main__':
 
             retrieval_result = {"similar_values": {}, "similar_columns": {}}
             for pred in predictions.values():
-                if "steps" in pred:
-                    retrieval_result_i = pred["steps"][-1]["retrieval_result"]
-                else:
-                    retrieval_result_i = pred["retrieval_result"]
+                retrieval_result_i = pred["retrieval_result"]
+                # if "steps" in pred:
+                #     retrieval_result_i = pred["steps"][-1]["retrieval_result"]
+                # else:
+                #     retrieval_result_i = pred["retrieval_result"]
                 for table, column_values in retrieval_result_i['similar_values'].items():
                     for column, values in column_values.items():
                         similar_values = retrieval_result['similar_values'].get(table, {}).get(column, [])
@@ -129,7 +152,7 @@ if __name__ == '__main__':
                 final_sql = sqls[0]
             except Exception as e:
                 error = str(e)
-                print(f"Error in {question_id}")
+                print(f"Error in {question_id}: {error}")
                 final_sql = sqls[0]
 
 

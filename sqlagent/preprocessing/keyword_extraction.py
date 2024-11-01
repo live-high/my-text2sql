@@ -1,10 +1,11 @@
 import os
 import json
+import regex as re
 from langchain_openai import ChatOpenAI
 
 TEMPLATES_ROOT_PATH = os.environ["TEMPLATES_ROOT_PATH"]
 
-def keyword_extraction(question: str, model: str = "gpt-4o", temperature: float = 0.0):
+def keyword_extraction(task: str, model: str = "gpt-4o", temperature: float = 0.0):
     """
     Extracts keywords from the question.
     """
@@ -14,11 +15,6 @@ def keyword_extraction(question: str, model: str = "gpt-4o", temperature: float 
     KEYWORD_EXTRACTION_PROMPT = ""
     with open(template_path, "r") as file:
         KEYWORD_EXTRACTION_PROMPT = file.read()
-
-    task = (
-        f"Question: {question}"
-        # f"Hint: {hint}"
-    )
     
     prompt = KEYWORD_EXTRACTION_PROMPT.format(TASK=task)
     llm = ChatOpenAI(model=model, temperature=temperature)
@@ -26,10 +22,12 @@ def keyword_extraction(question: str, model: str = "gpt-4o", temperature: float 
     response = response.content
     
     try:
-        keywords = eval(response)
+        keywords = re.findall(r"\[(.*?)\]", response)
+        if len(keywords):
+            keywords = keywords[0]
+            keywords = eval(f'[{keywords}]')
     except:
-        print(f"Failed to extract keywords: {response}")
-        keywords = []
+        raise Exception(f"Failed to extract keywords: {response}")
     return keywords
 
 if __name__ == "__main__":

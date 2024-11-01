@@ -31,7 +31,12 @@ def candidate_generation(question: str, schema_string: str, model:str="gpt-4o", 
 
 
 def preprocessing(question: str, db_mode: str, db_id: str, model:str="gpt-4o", temperature: float = 0.0):
-    keywords = keyword_extraction(question=question, model=model, temperature=temperature)
+    
+    task = (
+        f"Question: {question}"
+        # f"Hint: {hint}"
+    )
+    keywords = keyword_extraction(task=task, model=model, temperature=temperature)
     retrieval_result = entity_retrieval(question=question, keywords=keywords, db_mode=db_mode, db_id=db_id)
     print(keywords, retrieval_result)
     

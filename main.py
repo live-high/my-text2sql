@@ -15,22 +15,18 @@ def main(eval_data, pass_ids, model, temperature, pred_sql_path, pipeline_type):
         example["question_id"] = question_id
         question = example["question"]
         db_id = example["db_id"]
-        DB_MODE = "dev"
-        DB_ID = db_id
+        db_mode = "dev"
         hint = example["evidence"]
         question = f"{question}\nHint: {hint}\n"
         try:
             if pipeline_type == "basic":
-                result = basic_pipeline(question=question, db_mode=DB_MODE, db_id=DB_ID, model=model, temperature=temperature)
+                result = basic_pipeline(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
             elif pipeline_type == "reflexion":
-                ground_truth = example["SQL"]
-                reflection_strategy = "with_trajectories"
-                reflection_strategy = ""
                 reflection_num = 3
                 result = reflexion_pipeline(
-                    question=question, ground_truth=ground_truth, db_mode=DB_MODE, db_id=DB_ID,
+                    question=question, db_mode=db_mode, db_id=db_id,
                     model=model, temperature=temperature, num_reflection=reflection_num,
-                    strategy=reflection_strategy)
+                )
             success_ids.append(question_id)
         except Exception as e:
             print(f"Error in {pipeline_type} pipeline: {e}")
@@ -68,6 +64,8 @@ if __name__ == '__main__':
     if os.path.exists(pred_sql_path):
         with open(pred_sql_path, 'r') as f:
             for line in f:
+                if line == '\n':
+                    continue
                 example = json.loads(line)
                 pass_ids.append(example["question_id"])
     failed_ids = [i for i in range(len(eval_data)) if i not in pass_ids]

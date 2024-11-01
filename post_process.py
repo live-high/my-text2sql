@@ -16,6 +16,8 @@ if __name__ == "__main__":
     results = {}
     with open(args.result_file, 'r') as f:
         for line in f:
+            if line == '\n':
+                continue
             example = json.loads(line)
             prediction = example["pred"]["response"]
             db_id = example["db_id"]
