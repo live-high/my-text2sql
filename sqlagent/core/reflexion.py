@@ -5,7 +5,7 @@ from sqlagent.preprocessing.entity_retrieval import entity_retrieval
 from sqlagent.database_utils.execution import execute_sql
 from sqlagent.runner.database_manager import DatabaseManager
 from sqlagent.database_utils.db_info import get_db_schema
-from sqlagent.utils import parse_sql
+from sqlagent.utils import parse_sql, is_valid_exec_result
 TEMPLATES_ROOT_PATH = os.environ["TEMPLATES_ROOT_PATH"]
 
 
@@ -94,23 +94,6 @@ def self_reflect(question: str, trajectories: list, schema_string: str, model:st
     return response
 
 
-def is_valid(exec_result):
-    if isinstance(exec_result, Exception):
-        return False
-    if isinstance(exec_result, str):
-        return False
-    if not exec_result:
-        return False
-    for item in exec_result:
-        if item is None:
-            return False
-        if not item:
-            return False
-        if isinstance(item, list):
-            for sub_item in item:
-                if sub_item is None:
-                    return False
-    return True
 
 def reflexion_pipeline(
         question: str,
@@ -184,7 +167,7 @@ def reflexion_pipeline(
             exec_result = str(e)
             print(f"Error in execute_sql: {e}")
 
-        if not is_valid(exec_result):
+        if not is_valid_exec_result(exec_result):
             trajectories.append({
                 "SQL": sql,
                 "Execution Result": exec_result,

@@ -5,6 +5,7 @@ import argparse
 import sqlite3
 import multiprocessing as mp
 from func_timeout import func_timeout, FunctionTimedOut
+from sqlagent.utils import is_valid_exec_result
 empty_count = 0
 
 
@@ -52,7 +53,7 @@ def execute_sql(predicted_sql, ground_truth, db_path):
         res = 1
     res_extra = check_results(predicted_res, ground_truth_res)
 
-    return res, (res_extra, len(predicted_res))
+    return res, (res_extra, len(predicted_res), is_valid_exec_result(predicted_res))
 
 
 def execute_model_ori(predicted_sql, ground_truth, db_place, idx, meta_time_out):

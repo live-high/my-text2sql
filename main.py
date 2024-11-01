@@ -22,7 +22,7 @@ def main(eval_data, pass_ids, model, temperature, pred_sql_path, pipeline_type):
         try:
             if pipeline_type == "basic":
                 result = basic_pipeline(question=question, db_mode=DB_MODE, db_id=DB_ID, model=model, temperature=temperature)
-            elif pipeline_type == "reflextion":
+            elif pipeline_type == "reflexion":
                 ground_truth = example["SQL"]
                 reflection_strategy = "with_trajectories"
                 reflection_strategy = ""
@@ -48,7 +48,7 @@ def main(eval_data, pass_ids, model, temperature, pred_sql_path, pipeline_type):
 if __name__ == '__main__':
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument('--eval_path', type=str, default='')
-    args_parser.add_argument('--pipeline_type', type=str, default='basic', choices=['basic', 'reflextion'])
+    args_parser.add_argument('--pipeline_type', type=str, default='basic', choices=['basic', 'reflexion'])
     args_parser.add_argument('--model', type=str, default='claude-3-5-sonnet-20241022')
     args_parser.add_argument('--temperature', type=float, default=1.0)
     args_parser.add_argument('--output_path', type=str, default='.')
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     failed_ids = [i for i in range(len(eval_data)) if i not in pass_ids]
     print(f"Failed ids: {failed_ids}")
     while failed_ids:
-        pass_ids = main(eval_data, pass_ids, model, temperature, pred_sql_path,pipeline_type)
+        pass_ids = main(eval_data, pass_ids, model, temperature, pred_sql_path, pipeline_type)
         print(f"Successfully processed {len(pass_ids)}/{len(eval_data)} questions")
         failed_ids = [i for i in range(len(eval_data)) if i not in pass_ids]
         print(f"Failed to process {len(failed_ids)} questions: {failed_ids}")
