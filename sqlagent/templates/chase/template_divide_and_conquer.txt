@@ -1,0 +1,147 @@
+You are a data science expert.
+Below, you are presented with a database schema and a question.
+Your task is to read the schema, understand the question, and generate a valid SQLite query to answer the question.
+Like the example below, you should first divide and conquer to sub-questions, analyse them and generatecorresponding SQL queries, then assemble those sub-queries into a final SQL query, then simplify and optimize the query.
+
+Here are some examples:
+**************************
+Database Info:
+
+CREATE TABLE account
+(
+        account_id INTEGER default 0 not null primary key,
+        district_id INTEGER default 0 not null, --
+        frequency TEXT not null, --
+        date DATE not null, -- examples: `1995-09-21`
+        foreign key (district_id) references district (district_id),
+);
+
+CREATE TABLE card
+(
+        card_id INTEGER default 0 not null primary key,
+        disp_id INTEGER not null, --
+        type TEXT not null, --
+        issued DATE not null, -- examples: `1998-06-11`
+        foreign key (disp_id) references disp (disp_id),
+);
+
+CREATE TABLE client
+(
+        client_id INTEGER not null primary key,
+        gender TEXT not null, --
+        birth_date DATE not null, -- examples: `1945-02-04`
+        district_id INTEGER not null, --
+        foreign key (district_id) references district (district_id),
+);
+
+CREATE TABLE disp
+(
+        disp_id INTEGER not null primary key,
+        client_id INTEGER not null, --
+        account_id INTEGER not null, --
+        type TEXT not null, --
+        foreign key (account_id) references account (account_id),
+        foreign key (client_id) references client (client_id),
+);
+
+CREATE TABLE district
+(
+        district_id INTEGER default 0 not null primary key,
+        A2 TEXT not null, --
+        A3 TEXT not null, --
+        A4 TEXT not null, --
+        A5 TEXT not null, --
+        A6 TEXT not null, --
+        A7 TEXT not null, --
+        A8 INTEGER not null, --
+        A9 INTEGER not null, --
+        A10 REAL not null, --
+        A11 INTEGER not null, --
+        A12 REAL null, --
+        A13 REAL not null, --
+        A14 INTEGER not null, --
+        A15 INTEGER null, --
+        A16 INTEGER not null, --
+);
+
+CREATE TABLE loan
+(
+        loan_id INTEGER default 0 not null primary key,
+        account_id INTEGER not null, --
+        date DATE not null, -- examples: `1994-01-05`
+        amount INTEGER not null, --
+        duration INTEGER not null, --
+        payments REAL not null, --
+        status TEXT not null, --
+        foreign key (account_id) references account (account_id),
+);
+
+CREATE TABLE order
+(
+        order_id INTEGER default 0 not null primary key,
+        account_id INTEGER not null, --
+        bank_to TEXT not null, --
+        account_to INTEGER not null, --
+        amount REAL not null, --
+        k_symbol TEXT not null, --
+        foreign key (account_id) references account (account_id),
+);
+
+CREATE TABLE trans
+(
+        trans_id INTEGER default 0 not null primary key,
+        account_id INTEGER default 0 not null, --
+        date DATE not null, -- examples: `1995-10-13`
+        type TEXT not null, --
+        operation TEXT null, --
+        amount INTEGER not null, --
+        balance INTEGER not null, --
+        k_symbol TEXT null, --
+        bank TEXT null, --
+        account INTEGER null, --
+        foreign key (account_id) references account (account_id),
+);
+**************************
+Question:
+What is the gender of the youngest client who opened account in the lowest average salary branch?
+Hint: 
+Earlier birthdate refers to older age; A11 refers to average salary
+**************************
+**1. Divide and Conquer:**
+
+* **Main Question:** What is the gender of the youngest client who opened account in the lowest average salary branch?
+* **Analysis:** Question asking about 'gender', and it appears in table 'client'. We will use this as the output column, selecting it from the youngest client in the lowest average salary branch.
+* **Pseudo SQL:** SELECT 'T1'.'gender' FROM 'client' AS 'T1' WHERE youngest client in the lowest average salary branch
+
+* **Sub-question 1:** youngest client in the lowest average salary branch
+* **Analysis:** According to the hint, we need to use the 'A11' from 'district' to get the salary info, and the youngest client can be obtained from using the 'birth_date' column of table 'client'. The items between these two tables can be INNER JOIN using district_id.
+* **Pseudo SQL:** SELECT 'T1'.'client_id' FROM 'client' AS 'T1' INNER JOIN 'district' AS 'T2' ON 'T1'.'district_id' = 'T2'.'district_id' WHERE lowest average salary branch ORDER BY 'T1'.'birth_date' DESC NULLS LAST LIMIT 1
+
+* **Sub-question 1.1:** lowest average salary branch
+* **Analysis:** We can get the lowest average salary branch using order by 'A11' ASC and pick top 1. The column 'A11' is not NULLABLE, so we do not need to add "IS NOT NULL" filter 
+* **Pseudo SQL:**SELECT 'district_id' FROM 'district' ORDER BY 'A11' ASC LIMIT 1
+
+**2. Assembling SQL:**
+* **Sub-question 1.1 (lowest average salary branch):** 
+* **SQL:** SELECT 'district_id' FROM 'district' ORDER BY 'A11' ASC LIMIT 1
+
+* **Sub-question 1 (youngest client in the lowest average salary branch):**
+* **SQL:** SELECT 'T1'.'client_id' FROM 'client' AS 'T1' INNER JOIN 'district' AS 'T2' ON 'T1'.'district_id' = 'T2'.'district_id' WHERE 'T2'.'district_id' IN (SELECT 'district_id' FROM 'district' ORDER BY 'A11' ASC LIMIT 1) ORDER BY 'T1'.'birth_date' DESC NULLS LAST LIMIT 1
+
+* **Main Question (gender of the client):**
+* **SQL:** SELECT 'T1'.'gender' FROM 'client' AS 'T1' WHERE 'T1'.'client_id' = (SELECT 'T1'.'client_id' FROM 'client' AS 'T1' INNER JOIN 'district' AS 'T2' ON 'T1'.'district_id' = 'T2'.'district_id' WHERE 'T2'.'district_id' IN (SELECT 'district_id' FROM 'district' ORDER BY 'A11' ASC LIMIT 1) ORDER BY 'T1'.'birth_date' DESC NULLS LAST LIMIT 1)
+
+**3. Simplification and Optimization:**
+* The nested queries can be combined using a single 'INNER JOIN' and the filtering can be done within a single 'ORDER BY' clause.
+
+**Final Optimized SQL Query:**
+SELECT 'T1'.'gender' FROM 'client' AS 'T1' INNER JOIN 'district' AS 'T2' ON 'T1'.'district_id' = 'T2'.'district_id' ORDER BY 'T2'.'A11' ASC, 'T1'.'birth_date' DESC NULLS LAST LIMIT 1
+
+======= Your task =======
+**************************
+Database Info
+
+{DATABASE_SCHEMA}
+**************************
+{TASK}
+**************************

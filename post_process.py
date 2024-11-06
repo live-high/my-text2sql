@@ -1,7 +1,7 @@
 import json
 import regex as re
 import argparse
-from sqlagent.utils import parse_sql
+from sqlagent.utils import parse_sql, parse_last_sql_code
 
 
 if __name__ == "__main__":
@@ -31,11 +31,14 @@ if __name__ == "__main__":
                     results[question_id] = (prediction, db_id)
                     
         for question_id, (prediction, db_id) in results.items():
-            sql = parse_sql(prediction)
+            sql = prediction
+            sql = parse_sql(sql)
+            sql = parse_last_sql_code(sql)
             results[question_id] = sql + '\t----- bird -----\t' + db_id
 
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=4)
+    
     
     elif mode == "retrieval_result":
 
@@ -46,6 +49,7 @@ if __name__ == "__main__":
                     continue
                 example = json.loads(line)
                 question_id = example["question_id"]
+                question = example["question"]
                 gt_sql = example["SQL"]
                 if "pred" in example:
                     pred = example["pred"]
@@ -58,7 +62,7 @@ if __name__ == "__main__":
                 else:
                     raise ValueError("No prediction found")
                 if question_id not in results:
-                    results[question_id] = (retrieval_result, gt_sql)
+                    results[question_id] = (retrieval_result, question, gt_sql)
                     
         with open(output_file, 'w') as f:
             f.write("")
@@ -66,9 +70,10 @@ if __name__ == "__main__":
         results = sorted(results.items(), key=lambda x: int(x[0]))
 
         with open(output_file, 'a') as f:
-            for question_id, (retrieval_result, gt_sql) in results:
+            for question_id, (retrieval_result, question, gt_sql) in results:
                 item = {
                     "question_id": question_id,
+                    "question": question,
                     "SQL": gt_sql,
                     "retrieval_result": retrieval_result,
                     }

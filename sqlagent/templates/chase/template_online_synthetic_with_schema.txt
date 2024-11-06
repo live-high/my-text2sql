@@ -1,0 +1,16 @@
+You are a SQLite SQL expert. Your job is to create a set of examples, where each example consists of a question and a SQL query to fetch the data for it.
+You should generate examples that examine and showcase different aspects and relationships of the following table schemas. 
+Understand the database tables and their relationships. Understand the columns and their types and meanings to construct intresting examples.
+I will also show you multiple examples generated for the other database and its table schemas, so you can see what kind of examples can be generated for a given database.
+
+**************************
+###Examples from other database### 
+The following is the table schemas and column examples for other database:
+{TRAIN_EXAMPLES}
+
+Now similarly, generate examples (question input and SQL output pairs) for the table schemas defined below, in "Table creation statements".
+**************************
+###Table creation statements###
+{DATABASE_SCHEMA}
+**************************
+Generate total of {k} examples. Only outputs the examples (question input and SQL output pairs), and each example can be separated by a new line.

@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 from func_timeout import func_timeout, FunctionTimedOut
-from sqlagent.utils import parse_sql
+from sqlagent.utils import parse_sql, parse_last_sql_code
 from sqlagent.postprocessing.self_consistency import aggregate_sqls
 from sqlagent.postprocessing.selector import selector
 from sqlagent.runner.database_manager import DatabaseManager
@@ -79,12 +79,18 @@ if __name__ == '__main__':
             predictions = model_preds.get(question_id, {})
             sqls = []
             for model, pred in predictions.items():
-                sqls.append(parse_sql(pred["response"]))
+                sql = pred["response"]
+                sql = parse_sql(sql)
+                sql = parse_last_sql_code(sql)
+                sqls.append(sql)
                 if "steps" in pred:
                     steps = pred["steps"]
                     count_steps[question_id] += len(steps)
                     for step in steps:
-                        sqls.append(parse_sql(step["response"]))
+                        sql = step["response"]
+                        sql = parse_sql(sql)
+                        sql = parse_last_sql_code(sql)
+                        sqls.append(sql)
             
             error = ""
             try:
@@ -141,7 +147,7 @@ if __name__ == '__main__':
                 question = example["question"]
                 db_mode = "dev"
                 predictions = model_preds.get(question_id, {})
-                sqls = [parse_sql(v["response"]) for v in predictions.values()]
+                sqls = [parse_last_sql_code(parse_sql(v["response"])) for v in predictions.values()]
 
                 retrieval_result_list = []
                 for pred in predictions.values():

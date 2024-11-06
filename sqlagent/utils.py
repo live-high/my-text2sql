@@ -15,6 +15,20 @@ def parse_sql(output_str):
         sql = output_str
     return sql
 
+
+def parse_last_sql_code(output_str):
+    pat = re.compile(r'```sql(?!.*```sql)(.*?)```', re.DOTALL)
+    sql = re.findall(pat, output_str)
+    if sql:
+        sql = sql[0]
+        if '\n' in sql:
+            sql = re.sub(r"\n", ' ', sql)
+        sql = re.sub(r"\s+", ' ', sql)
+    else:
+        sql = output_str
+    return sql
+
+
 def is_valid_exec_result(exec_result):
     if isinstance(exec_result, Exception):
         return False

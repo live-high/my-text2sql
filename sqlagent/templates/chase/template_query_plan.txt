@@ -1,0 +1,82 @@
+You are a data science expert.
+Below, you are presented with a database schema and a question.
+Your task is to read the schema, understand the question, and generate a valid SQLite query to answer the question.
+Like the example below, you should answer repeating the question and evidence, and generating the SQL with a query plan.
+
+Here are some examples:
+**************************
+Database Info:
+
+CREATE TABLE geographic
+(
+        city TEXT not null primary key,
+        county TEXT null, --
+        region TEXT null, --
+);
+
+CREATE TABLE generalinfo
+(
+        id_restaurant INTEGER not null primary key,
+        label TEXT null, --
+        food_type TEXT null, --
+        city TEXT null, --
+        review REAL null, --
+        foreign key (city) references geographic(city) on update cascade on delete cascade,
+);
+
+CREATE TABLE location
+(
+        id_restaurant INTEGER not null primary key,
+        street_num INTEGER null, --
+        street_name TEXT null, --
+        city TEXT null, --
+        foreign key (city) references geographic (city) on update cascade on delete cascade,
+        foreign key (id_restaurant) references generalinfo (id_restaurant) on update cascade on delete cascade,
+);
+**************************
+Question: 
+How many Thai restaurants can be found in San Pablo Ave, Albany?
+Hint: 
+Thai restaurant refers to food_type = 'thai'; San Pablo Ave Albany refers to street_name = 'san pablo ave' AND T1.city = 'albany'
+**************************
+**Query Plan**:
+
+** Preparation Steps:**
+1. Initialize the process: Start preparing to execute the query.
+2. Prepare storage: Set up storage space (registers) to hold temporary results, initializing them to NULL.
+3. Open the location table: Open the location table so we can read from it.
+4. Open the generalinfo table: Open the generalinfo table so we can read from it.
+
+** Matching Restaurants:**
+1. Start reading the location table: Move to the first row in the location table.
+2. Check if the street matches: Look at the street_name column of the current row in location. If it's not "san pablo ave," skip this row.
+3. Identify the matching row: Store the identifier (row ID) of this location entry.
+4. Find the corresponding row in generalinfo: Use the row ID from location to directly find the matching row in generalinfo.
+5. Check if the food type matches: Look at the food_type column in generalinfo. If it's not "thai," skip this row.
+6. Check if the city matches: Look at the city column in generalinfo. If it's not "albany," skip this row.
+
+** Counting Restaurants:**
+1. Prepare to count this match: If all checks pass, prepare to include this row in the final count.
+2. Count this match: Increment the count for each row that meets all the criteria.
+3. Move to the next row in location: Go back to the location table and move to the next row, repeating the process until all rows are checked.
+4. Finalize the count: Once all rows have been checked, finalize the count of matching rows.
+5. Prepare the result: Copy the final count to prepare it for output.
+
+** Delivering the Result:**
+1. Output the result: Output the final count, which is the number of restaurants that match all the specified criteria.
+2. End the process: Stop the query execution process.
+3. Setup phase: Before starting the actual query execution, the system prepares the specific values it will be looking for, like "san pablo ave," "thai," and "albany."
+
+**Final Optimized SQL Query:**
+```sql
+SELECT COUNT(T1.id_restaurant) FROM generalinfo AS T1 INNER JOIN location AS T2 ON T1.id_restaurant = T2.id_restaurant WHERE T1.food_type = 'thai' AND T1.city = 'albany' AND T2.street_name = 'san pablo ave'
+```
+
+======= Your task =======
+**************************
+Database Info:
+
+{DATABASE_SCHEMA}
+**************************
+{TASK}
+**************************
