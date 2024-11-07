@@ -65,8 +65,13 @@ def main(eval_data, pass_ids, model, temperature, pred_sql_path, pipeline_type):
 if __name__ == '__main__':
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument('--eval_path', type=str, default='')
-    args_parser.add_argument('--pipeline_type', type=str, default='basic')
-    args_parser.add_argument('--model', type=str, default='claude-3-5-sonnet-20241022')
+    args_parser.add_argument('--pipeline_type', type=str, default='basic', choices=[
+        'basic', 'reflexion', 'chase', 'dca', 'qp', 'os', 'dc_fix'])
+    args_parser.add_argument('--model', type=str, default='claude-3-5-sonnet-20241022', choices=[
+        'gpt-4o', 'gpt-4o-2024-08-06', 'o1-preview',
+        'gemini-1.5-pro',
+        'claude-3-5-sonnet-20240620', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022',
+        'hunyuan'])
     args_parser.add_argument('--temperature', type=float, default=1.0)
     args_parser.add_argument('--output_path', type=str, default='.')
     args = args_parser.parse_args()

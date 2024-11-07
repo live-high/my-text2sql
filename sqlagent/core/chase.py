@@ -275,15 +275,20 @@ def query_fix(question: str, trajectory: dict, schema_string: str, model:str="gp
     return response
 
 
-def DC_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
+def get_preprocessed_retrieval_results(retrieval_result_file: str):
+    retrieval_result = {}
+    if os.path.exists(retrieval_result_file):
+        for line in open(retrieval_result_file):
+            item = json.loads(line)
+            if question.startswith(item["question"]):
+                retrieval_result = item["retrieval_result"]
+                break
+    return retrieval_result
+
+def chase_preprocessing(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
 
     retrieval_result_file = f"preprocessing_outputs/basic/{model}/retrieval_result.jsonl"
-    retrieval_result = {}
-    for line in open(retrieval_result_file):
-        item = json.loads(line)
-        if question.startswith(item["question"]):
-            retrieval_result = item["retrieval_result"]
-            break
+    retrieval_result = get_preprocessed_retrieval_results(retrieval_result_file)
     if not retrieval_result:
         keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     else:
@@ -295,7 +300,11 @@ def DC_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature:
             schema_with_descriptions=None, 
             include_value_description=True
         )
-    
+    return retrieval_result, schema_string
+
+
+def DC_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
+    retrieval_result, schema_string = chase_preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     task = (
         f"Question: {question}"
         # f"Hint: {hint}"
@@ -312,24 +321,7 @@ def DC_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature:
 
 def DCA_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
 
-    retrieval_result_file = f"preprocessing_outputs/basic/{model}/retrieval_result.jsonl"
-    retrieval_result = {}
-    for line in open(retrieval_result_file):
-        item = json.loads(line)
-        if question.startswith(item["question"]):
-            retrieval_result = item["retrieval_result"]
-            break
-    if not retrieval_result:
-        keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
-    else:
-        schema_with_examples = retrieval_result["similar_values"]
-        db_manager = DatabaseManager(db_mode=db_mode, db_id=db_id)
-        schema_string = db_manager.get_database_schema_string(
-            tentative_schema=get_db_schema(db_manager.db_path), 
-            schema_with_examples=schema_with_examples, 
-            schema_with_descriptions=None, 
-            include_value_description=True
-        )
+    retrieval_result, schema_string = chase_preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     
     task = (
         f"Question: {question}"
@@ -356,24 +348,7 @@ def DCA_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature
 
 def DC_fix_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0, num_fix: int = 3):
 
-    retrieval_result_file = f"preprocessing_outputs/basic/{model}/retrieval_result.jsonl"
-    retrieval_result = {}
-    for line in open(retrieval_result_file):
-        item = json.loads(line)
-        if question.startswith(item["question"]):
-            retrieval_result = item["retrieval_result"]
-            break
-    if not retrieval_result:
-        keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
-    else:
-        schema_with_examples = retrieval_result["similar_values"]
-        db_manager = DatabaseManager(db_mode=db_mode, db_id=db_id)
-        schema_string = db_manager.get_database_schema_string(
-            tentative_schema=get_db_schema(db_manager.db_path), 
-            schema_with_examples=schema_with_examples, 
-            schema_with_descriptions=None, 
-            include_value_description=True
-        )
+    retrieval_result, schema_string = chase_preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     
     task = (
         f"Question: {question}"
@@ -439,24 +414,7 @@ def DC_fix_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: f
 
 def QP_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
 
-    retrieval_result_file = f"preprocessing_outputs/basic/{model}/retrieval_result.jsonl"
-    retrieval_result = {}
-    for line in open(retrieval_result_file):
-        item = json.loads(line)
-        if question.startswith(item["question"]):
-            retrieval_result = item["retrieval_result"]
-            break
-    if not retrieval_result:
-        keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
-    else:
-        schema_with_examples = retrieval_result["similar_values"]
-        db_manager = DatabaseManager(db_mode=db_mode, db_id=db_id)
-        schema_string = db_manager.get_database_schema_string(
-            tentative_schema=get_db_schema(db_manager.db_path), 
-            schema_with_examples=schema_with_examples, 
-            schema_with_descriptions=None, 
-            include_value_description=True
-        )
+    retrieval_result, schema_string = chase_preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     
     task = (
         f"Question: {question}"
@@ -473,24 +431,7 @@ def QP_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature:
 
 def OS_basic_pipeline(question, db_mode, db_id, model:str="gpt-4o", temperature: float = 0.0):
 
-    retrieval_result_file = f"preprocessing_outputs/basic/{model}/retrieval_result.jsonl"
-    retrieval_result = {}
-    for line in open(retrieval_result_file):
-        item = json.loads(line)
-        if question.startswith(item["question"]):
-            retrieval_result = item["retrieval_result"]
-            break
-    if not retrieval_result:
-        keywords, retrieval_result, schema_string = preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
-    else:
-        schema_with_examples = retrieval_result["similar_values"]
-        db_manager = DatabaseManager(db_mode=db_mode, db_id=db_id)
-        schema_string = db_manager.get_database_schema_string(
-            tentative_schema=get_db_schema(db_manager.db_path), 
-            schema_with_examples=schema_with_examples, 
-            schema_with_descriptions=None, 
-            include_value_description=True
-        )
+    retrieval_result, schema_string = chase_preprocessing(question=question, db_mode=db_mode, db_id=db_id, model=model, temperature=temperature)
     
     task = (
         f"Question: {question}"
